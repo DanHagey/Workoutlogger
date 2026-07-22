@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Workout Log</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0f1115;
+      --surface: #1a1d24;
+      --border: #2c313a;
+      --text: #f0f2f5;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-text: #ffffff;
+      --chip-bg: #252a33;
+      --chip-selected: #4f8cff;
+      --danger: #ff6b6b;
+      --radius: 10px;
+      --gap: 1rem;
+      --field-gap: 1.25rem;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.4;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100dvh;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 390px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem calc(2rem + env(safe-area-inset-bottom));
+    }
+
+    h1 {
+      margin: 0 0 1.5rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--field-gap);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label,
+    .field-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    input[type="date"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 0.75rem 0.875rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      min-height: 44px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="date"] {
+      color-scheme: dark;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #6b7280;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 10rem;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .chips.energy {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+    }
+
+    .chip {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--chip-bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .chips.energy .chip {
+      border-radius: var(--radius);
+      padding: 0.5rem;
+      width: 100%;
+    }
+
+    .chip.selected {
+      background: var(--chip-selected);
+      border-color: var(--chip-selected);
+      color: var(--accent-text);
+      font-weight: 700;
+    }
+
+    .other-input {
+      display: none;
+      margin-top: 0.25rem;
+    }
+
+    .other-input.visible {
+      display: block;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      min-height: 52px;
+      margin-top: 0.5rem;
+      padding: 0.875rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: var(--accent-text);
+      font: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button[type="submit"]:active {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Workout Log</h1>
+
+    <form id="workout-form" action="#" method="get">
+      <!-- 1. Date -->
+      <div class="field">
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" required>
+      </div>
+
+      <!-- 2. Focus -->
+      <div class="field">
+        <span class="field-label" id="focus-label">Focus</span>
+        <div class="chips" role="group" aria-labelledby="focus-label" data-group="focus">
+          <button type="button" class="chip" data-value="Lower">Lower</button>
+          <button type="button" class="chip" data-value="Upper Push">Upper Push</button>
+          <button type="button" class="chip" data-value="Upper Pull">Upper Pull</button>
+          <button type="button" class="chip" data-value="Full Body">Full Body</button>
+          <button type="button" class="chip" data-value="Other">Other</button>
+        </div>
+        <input
+          type="text"
+          id="focus-other"
+          class="other-input"
+          name="focus-other"
+          placeholder="Describe focus"
+          autocomplete="off"
+        >
+      </div>
+
+      <!-- 3. Location -->
+      <div class="field">
+        <span class="field-label" id="location-label">Location</span>
+        <div class="chips" role="group" aria-labelledby="location-label" data-group="location">
+          <button type="button" class="chip" data-value="Rocklin">Rocklin</button>
+          <button type="button" class="chip" data-value="Citrus Heights">Citrus Heights</button>
+          <button type="button" class="chip" data-value="Other">Other</button>
+        </div>
+        <input
+          type="text"
+          id="location-other"
+          class="other-input"
+          name="location-other"
+          placeholder="Describe location"
+          autocomplete="off"
+        >
+      </div>
+
+      <!-- 4. Fuel pre -->
+      <div class="field">
+        <label for="fuel-pre">Fuel pre</label>
+        <input type="text" id="fuel-pre" name="fuel-pre" placeholder="Optional" autocomplete="off">
+      </div>
+
+      <!-- 5. Fuel mid -->
+      <div class="field">
+        <label for="fuel-mid">Fuel mid</label>
+        <input type="text" id="fuel-mid" name="fuel-mid" placeholder="Optional" autocomplete="off">
+      </div>
+
+      <!-- 6. Energy first half -->
+      <div class="field">
+        <span class="field-label" id="energy1-label">Energy first half</span>
+        <div class="chips energy" role="group" aria-labelledby="energy1-label" data-group="energy1">
+          <button type="button" class="chip" data-value="1">1</button>
+          <button type="button" class="chip" data-value="2">2</button>
+          <button type="button" class="chip" data-value="3">3</button>
+          <button type="button" class="chip" data-value="4">4</button>
+          <button type="button" class="chip" data-value="5">5</button>
+          <button type="button" class="chip" data-value="6">6</button>
+          <button type="button" class="chip" data-value="7">7</button>
+          <button type="button" class="chip" data-value="8">8</button>
+          <button type="button" class="chip" data-value="9">9</button>
+          <button type="button" class="chip" data-value="10">10</button>
+        </div>
+      </div>
+
+      <!-- 7. Energy second half -->
+      <div class="field">
+        <span class="field-label" id="energy2-label">Energy second half</span>
+        <div class="chips energy" role="group" aria-labelledby="energy2-label" data-group="energy2">
+          <button type="button" class="chip" data-value="1">1</button>
+          <button type="button" class="chip" data-value="2">2</button>
+          <button type="button" class="chip" data-value="3">3</button>
+          <button type="button" class="chip" data-value="4">4</button>
+          <button type="button" class="chip" data-value="5">5</button>
+          <button type="button" class="chip" data-value="6">6</button>
+          <button type="button" class="chip" data-value="7">7</button>
+          <button type="button" class="chip" data-value="8">8</button>
+          <button type="button" class="chip" data-value="9">9</button>
+          <button type="button" class="chip" data-value="10">10</button>
+        </div>
+      </div>
+
+      <!-- 8. Exercise block -->
+      <div class="field">
+        <label for="exercises">Exercise block</label>
+        <textarea
+          id="exercises"
+          name="exercises"
+          rows="10"
+          placeholder="Exercises, sets, reps…"
+        ></textarea>
+      </div>
+
+      <!-- 9. Total time -->
+      <div class="field">
+        <label for="total-time">Total time (min)</label>
+        <input type="text" id="total-time" name="total-time" inputmode="numeric" autocomplete="off">
+      </div>
+
+      <!-- 10. Active calories -->
+      <div class="field">
+        <label for="active-cal">Active calories</label>
+        <input type="text" id="active-cal" name="active-cal" inputmode="numeric" autocomplete="off">
+      </div>
+
+      <!-- 11. Average heart rate -->
+      <div class="field">
+        <label for="avg-hr">Average heart rate</label>
+        <input type="text" id="avg-hr" name="avg-hr" inputmode="numeric" autocomplete="off">
+      </div>
+
+      <!-- 12. Heart range -->
+      <div class="field">
+        <label for="hr-range">Heart range</label>
+        <input type="text" id="hr-range" name="hr-range" placeholder="e.g. 105-164" autocomplete="off">
+      </div>
+
+      <button type="submit">Log workout</button>
+    </form>
+  </div>
+
+  <script>
+    // --- Stage 1: default date to today (local, ISO YYYY-MM-DD) ---
+    (function setToday() {
+      var input = document.getElementById("date");
+      var now = new Date();
+      var yyyy = now.getFullYear();
+      var mm = String(now.getMonth() + 1).padStart(2, "0");
+      var dd = String(now.getDate()).padStart(2, "0");
+      input.value = yyyy + "-" + mm + "-" + dd;
+    })();
+
+    // --- Stage 2: chip selection + "Other" reveals ---
+    // Groups that can reveal a free-text "Other" input
+    var otherFields = {
+      focus: document.getElementById("focus-other"),
+      location: document.getElementById("location-other")
+    };
+
+    function selectChip(group, chip) {
+      // Clear selected state within this group only (single-select)
+      var chips = group.querySelectorAll(".chip");
+      for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.remove("selected");
+      }
+      chip.classList.add("selected");
+      // No deselect-on-retap: tapping the same chip again leaves it selected
+
+      var groupName = group.getAttribute("data-group");
+      var otherInput = otherFields[groupName];
+      if (!otherInput) {
+        return; // energy groups have no "Other"
+      }
+
+      if (chip.getAttribute("data-value") === "Other") {
+        otherInput.classList.add("visible");
+        otherInput.focus();
+      } else {
+        otherInput.classList.remove("visible");
+        otherInput.value = ""; // hide and clear when a named chip wins
+      }
+    }
+
+    // Wire every chip group: click handler is a function we pass to addEventListener
+    var groups = document.querySelectorAll(".chips[data-group]");
+    for (var g = 0; g < groups.length; g++) {
+      (function (group) {
+        group.addEventListener("click", function (event) {
+          var chip = event.target.closest(".chip");
+          if (!chip || !group.contains(chip)) {
+            return;
+          }
+          selectChip(group, chip);
+        });
+      })(groups[g]);
+    }
+
+    // --- Stage 3: note assembly (pure) + form collection (I/O) ---
+    // buildNote: object in → string out. No DOM. Console-testable like check50.
+
+    function selectedChipValue(groupName) {
+      var group = document.querySelector('.chips[data-group="' + groupName + '"]');
+      if (!group) {
+        return "";
+      }
+      var selected = group.querySelector(".chip.selected");
+      return selected ? selected.getAttribute("data-value") : "";
+    }
+
+    function collectForm() {
+      var focusChip = selectedChipValue("focus");
+      var locationChip = selectedChipValue("location");
+
+      return {
+        date: document.getElementById("date").value,
+        focus: focusChip === "Other"
+          ? document.getElementById("focus-other").value
+          : focusChip,
+        location: locationChip === "Other"
+          ? document.getElementById("location-other").value
+          : locationChip,
+        fuel_pre: document.getElementById("fuel-pre").value,
+        fuel_mid: document.getElementById("fuel-mid").value,
+        energy1: selectedChipValue("energy1"),
+        energy2: selectedChipValue("energy2"),
+        exercise_block: document.getElementById("exercises").value,
+        total_time: document.getElementById("total-time").value,
+        active_cal: document.getElementById("active-cal").value,
+        avg_hr: document.getElementById("avg-hr").value,
+        hr_range: document.getElementById("hr-range").value
+      };
+    }
+
+    function buildNote(data) {
+      // Trailing blank lines only — internal blanks stay (verbatim exercise block)
+      var exercises = String(data.exercise_block == null ? "" : data.exercise_block)
+        .replace(/\n+$/, "");
+
+      var date = data.date == null ? "" : data.date;
+      var focus = data.focus == null ? "" : data.focus;
+      var location = data.location == null ? "" : data.location;
+      var fuelPre = data.fuel_pre == null ? "" : data.fuel_pre;
+      var fuelMid = data.fuel_mid == null ? "" : data.fuel_mid;
+      var energy1 = data.energy1 == null ? "" : data.energy1;
+      var energy2 = data.energy2 == null ? "" : data.energy2;
+      var totalTime = data.total_time == null ? "" : data.total_time;
+      var activeCal = data.active_cal == null ? "" : data.active_cal;
+      var avgHr = data.avg_hr == null ? "" : data.avg_hr;
+      var hrRange = data.hr_range == null ? "" : data.hr_range;
+
+      // Template literals ≈ Python f-strings: ${} where Python uses {}
+      // Empty optionals keep the label (e.g. "  mid: ")
+      return (
+        "Date: " + date + "\n" +
+        "Focus: " + focus + "\n" +
+        "Location: " + location + "\n" +
+        "Fuel:\n" +
+        "  pre: " + fuelPre + "\n" +
+        "  mid: " + fuelMid + "\n" +
+        "Energy: first half " + energy1 + "/10, second half " + energy2 + "/10\n" +
+        "\n" +
+        exercises + "\n" +
+        "\n" +
+        "Total time: " + totalTime + "\n" +
+        "Active calories: " + activeCal + "\n" +
+        "Average heart rate: " + avgHr + "\n" +
+        "Heart range: " + hrRange
+      );
+    }
+
+    // Expose for browser-console checks (Stage 3 verification)
+    window.collectForm = collectForm;
+    window.buildNote = buildNote;
+
+    // --- Stage 4: encode + redirect to Obsidian ---
+    // encodeURIComponent (not encodeURI): escapes &, #, =, newlines in *values*
+    // so they don't split the query string — the old Shortcuts bug.
+
+    var VAULT = "second-brain";
+
+    function buildObsidianUri(data, note) {
+      var filePath = "Inbox/Workout " + data.date;
+      return (
+        "obsidian://new" +
+        "?vault=" + encodeURIComponent(VAULT) +
+        "&file=" + encodeURIComponent(filePath) +
+        "&content=" + encodeURIComponent(note)
+      );
+    }
+
+    document.getElementById("workout-form").addEventListener("submit", function (event) {
+      event.preventDefault(); // stop normal form navigation
+
+      var data = collectForm();
+      var note = buildNote(data);
+      var uri = buildObsidianUri(data, note);
+
+      window.location.href = uri;
+    });
+  </script>
+</body>
+</html>
