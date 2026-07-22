@@ -1,200 +1,205 @@
-# Session handoff — Workout Logger
+# Session handoff — Workout Logger (post-v1)
 
 **Date:** 2026-07-22  
 **Project path:** `/Users/danhagey/Builds/WorkoutLog`  
 **Remote:** https://github.com/DanHagey/Workoutlogger.git  
-**Build plan (source of truth):** `workout-logger-build-plan.md`
+**Live app:** https://danhagey.github.io/Workoutlogger/  
+**Build plan:** `workout-logger-build-plan.md` (v1 stages 1–6 complete; this handoff is the v1.1 source of truth)
 
-Read the build plan first. Follow it **one stage at a time**. Do not skip ahead. After each stage, stop for Dan to verify in a browser.
-
----
-
-## Goal
-
-One-screen workout entry form for iOS Safari. Single static file (`index.html`), vanilla HTML/CSS/JS, no backend, no framework. On submit: assemble Markdown client-side → `obsidian://new` into vault `second-brain` as `Inbox/YYYY-MM-DD Workout Log`.
-
-Dan is using this to practice programming fundamentals (CS50P parallels). Keep explanations short (2–4 sentences + the concept name). No lectures.
+Dan is practicing programming fundamentals (CS50P parallels). Keep explanations short (2–4 sentences + the concept name). No lectures. Build **one work item at a time**, then stop for Dan to verify.
 
 ---
 
-## Status: where we left off
+## Goal (unchanged product)
 
-| Stage | Name | Status |
-|-------|------|--------|
-| 1 | Static skeleton | **Done** — verified |
-| 2 | Chip behavior + Other reveals | **Done** — verified |
-| 3 | Note assembly (`buildNote` / `collectForm`) | **Done** — verified |
-| 4 | Encoding + Obsidian redirect | **Done** — verified on https (GitHub Pages) |
-| 5 | Validation + copy fallback | **Done** — verified |
-| 6 | Polish + acceptance pass | **Done** — full checklist passed from Home Screen web clip |
+One-screen workout entry form for iOS Safari. Single static file (`index.html`), vanilla HTML/CSS/JS, no backend, no framework. On submit: assemble Markdown client-side → `obsidian://new` into vault `second-brain`.
 
-**v1 shipped.** Live URL: https://danhagey.github.io/Workoutlogger/  
-Note path: `Inbox/YYYY-MM-DD Workout Log` in vault `second-brain`.
+**v1 shipped and acceptance-passed** (including Home Screen web clip). Next session is a small follow-up batch, not a redesign.
 
 ---
 
-## What happened with Stage 4 on iPhone
+## Status
 
-Dan opened `index.html` from **iCloud Downloads** (`file://…`). Submit built a correct URI, but WebKit failed:
-
-- Error: `NSURLErrorDomain Code=-1002 "unsupported URL"`
-- Failing URL was the full `obsidian://new?vault=…&file=…&content=…`
-- **This is not a JS bug.** Encoding and note body were correct (decoded content in the error log was clean: Focus, fuel, exercise block, heart range, etc.).
-- **Root cause:** iOS will not navigate from a `file://` page to a custom URL scheme. The build plan Delivery section already says local files are not a supported host path.
-
-**Do not “fix” Stage 4 encoding for this.** Retest from **https** (GitHub Pages) or any http(s) origin.
-
-Date field note (already resolved for Dan): `<input type="date">` *displays* locale format but `.value` is always ISO `YYYY-MM-DD`. Console `= $1` after `buildNote(...)` is Chrome DevTools chrome, not part of the string.
+| Item | Status |
+|------|--------|
+| Stages 1–6 (v1) | **Done** — full acceptance checklist passed from Home Screen web clip |
+| GitHub Pages | **Live** — https://danhagey.github.io/Workoutlogger/ |
+| Note naming | **Done** — `Inbox/YYYY-MM-DD Workout Log` |
+| Fuel empty → `"none"` | **Not started** (agreed) |
+| Same-day collision handling | **Not started** (agreed — policy A) |
+| Python `build_note` exercise | **Not started** (agreed; after JS changes) |
 
 ---
 
-## Locked decisions (do not change)
+## Locked decisions (do not re-derive)
+
+### Still locked from v1
 
 - Vault: `second-brain`
-- File path: `Inbox/YYYY-MM-DD Workout Log` (date only; same-day collisions out of scope)
 - URI: `obsidian://new?vault=…&file=…&content=…`
 - Encoding: **`encodeURIComponent()`** on file and content values — never `encodeURI()`
-- Note template: exact labels, casing, two-space indent on `pre:` / `mid:`, blank lines per plan
-- `buildNote(data)` must stay a **pure function** (no DOM)
+- Note body labels/casing/indent/blank lines stay as in the plan template (except fuel default below)
+- `buildNote(data)` stays a **pure function** (no DOM, no `localStorage`)
 - Chips: single-select, no deselect-on-retap, 44×44 min, Other reveals focus + clear on named chip
+- No backend, no framework, no multi-vault, no service worker, no vault read-back
+- Host only via https (GitHub Pages). `file://` cannot open `obsidian://` on iOS — not a JS bug
+
+### New decisions for next session (agreed 2026-07-22)
+
+1. **Fuel empty default**  
+   If fuel pre and/or fuel mid has no user input (empty / whitespace-only after trim), the note line value is **`none`** (literal string), e.g.:
+   ```
+     pre: none
+     mid: none
+   ```
+   If the user typed something, use their text as today. Apply inside `buildNote` (or a tiny pure helper it calls) so Python can mirror the same rule.
+
+2. **Same-day collision — policy A**  
+   - First note of the day: `Inbox/YYYY-MM-DD Workout Log`  
+   - Second note same calendar date: `Inbox/YYYY-MM-DD Workout Log 2`  
+   - Third: `… Workout Log 3`, etc.  
+   Likelihood of 2+ sessions/day is near zero; still implement so a second submit does not reopen/overwrite the first via Obsidian’s existing-file quirk.
+
+   **Implementation constraint:** a static page cannot list the vault. Track **per date, how many successful submits this browser has already done** using `localStorage` (e.g. key like `workoutLogCount:YYYY-MM-DD` → integer). On each **successful** submit (after validation passes), allocate the next index for that date and persist it.
+
+   - Count `0` or missing → base name (no suffix)  
+   - Count `1` already logged → next file uses suffix ` 2`  
+   - After successful redirect path is taken, increment stored count for that date  
+
+   Do **not** try to read Obsidian or merge notes. Cross-device / cleared-storage edge cases are acceptable (near-zero same-day dual log). Prefer simple over clever.
+
+3. **Optional metrics (time, calories, HR, range)**  
+   Leave as-is unless Dan asks otherwise — empty labels stay empty (only fuel gets `"none"`).
+
+4. **Further product work after this batch**  
+   **Leave as-is** unless real gym use surfaces pain. No PWA, AI, multi-step wizard, or backend.
 
 ---
 
-## Code already in `index.html`
+## Next session work order (strict)
 
-- All 12 fields, dark mobile-first layout (~390px)
-- Date defaulted to today (local ISO)
-- Four chip groups; Focus/Location Other inputs show/hide/clear
-- `collectForm()` → plain object from DOM
-- `buildNote(data)` → note string (trailing newlines stripped on exercise block only)
-- Both exposed on `window` for console tests
-- Submit handler: `preventDefault` → collect → build note → `buildObsidianUri` → `window.location.href`
-- Vault constant: `second-brain`
+### 1. Fuel → `"none"` when empty
 
-Stages 5–6 are **not** implemented yet (validation, copy fallback strip, polish).
+**Where:** `buildNote` in `index.html` (pure).  
+**Verify (console or one submit):** empty fuel fields produce `  pre: none` / `  mid: none`; typed values unchanged.  
+**Stop** for Dan to confirm if desired, or combine with item 2 in one push if both are tiny — still verify both.
+
+### 2. Same-day collision (policy A)
+
+**Where:** path building near `buildObsidianUri` / submit handler — **not** inside pure `buildNote` (path is I/O-adjacent state).
+
+Suggested shape:
+
+- `function noteFilePath(date, index)` → pure string helper  
+  - `index === 1` → `Inbox/YYYY-MM-DD Workout Log`  
+  - `index >= 2` → `Inbox/YYYY-MM-DD Workout Log {index}`  
+- `localStorage` read/write for count by date  
+- On valid submit: `nextIndex = storedCount + 1`, build path with that index, then save `storedCount = nextIndex` **before or after** redirect (before is safer so a failed Obsidian open still advances if they retry — discuss: advancing on attempt vs only on success; prefer **advance on successful validation + commit to open**, so double-tap doesn’t create Log + Log 2 from one intent… actually double-submit risk: increment once per successful validation pass is fine)
+
+**Verify on iPhone (https / web clip):**
+
+1. Submit once → note title `YYYY-MM-DD Workout Log`  
+2. Submit again same day (can use thin form) → note title `YYYY-MM-DD Workout Log 2`  
+3. First note still exists unchanged  
+4. Special characters still intact; copy fallback still works  
+
+**Stop** for Dan after this ships to Pages.
+
+### 3. Python `build_note` exercise (after JS fuel rule is stable)
+
+Deferred exercise from the plan — do this **after** fuel default is in the JS so both languages match.
+
+**Suggested deliverable** (agent scaffolds; Dan can run/edit):
+
+```
+/Users/danhagey/Builds/WorkoutLog/
+  python/
+    build_note.py      # build_note(data: dict) -> str
+    test_build_note.py # 3–4 tests (or pytest)
+```
+
+Mirror JS rules:
+
+- Same template (labels, `  pre:` / `  mid:`, blank lines, exercise trailing trim)
+- Empty fuel → `"none"`
+- Pure function only  
+Optional: pure `note_file_path(date: str, index: int) -> str` for collision naming (unit-test friendly)
+
+**CS50P parallel:** dict in → str out; tests like `check50`; no DOM.
+
+Do **not** start Python until JS items 1–2 are verified unless Dan asks to do Python-only first.
 
 ---
 
-## Git / GitHub state
+## Code map (`index.html` today)
+
+- Stage 1: date default to local ISO today  
+- Stage 2: chip groups + Other show/hide/clear  
+- Stage 3: `collectForm()`, `buildNote(data)` — pure; on `window` for console  
+- Stage 4: `buildObsidianUri`, submit → `window.location.href`  
+- Stage 5: validation (Focus, Location/Other text, both Energy, exercise block); scroll + `.field-error`; always-on copy strip; form not cleared  
+- Stage 6: polish (spacing, outdoor chip contrast, safe-area, ≥52px submit)
+
+Path today:
+
+```js
+var filePath = "Inbox/" + data.date + " Workout Log";
+```
+
+Fuel today: empty string if blank (must become `"none"`).
+
+---
+
+## Git / ops
 
 ```
-Path:     /Users/danhagey/Builds/WorkoutLog
-Branch:   main
-Remote:   origin → https://github.com/DanHagey/Workoutlogger.git
-Files:    index.html, workout-logger-build-plan.md, README.md, SESSION-HANDOFF.md (this file)
+Path:   /Users/danhagey/Builds/WorkoutLog
+Branch: main
+Remote: origin → https://github.com/DanHagey/Workoutlogger.git
+Pages:  legacy, branch main, path /
 ```
 
-Recent local history (as of handoff write):
+`gh` auth was configured (`gh auth setup-git`). Push `main` after changes; Pages rebuilds automatically (~30–60s). Hard-refresh or re-open web clip after deploy.
 
-1. `64c94ab` — “Add workout logger Stage 1–4 single-page app.” (`index.html` + plan)
-2. `cc4b645` — “first commit” (added stub `README.md` only)
-
-Working tree was clean before this handoff file was added.
-
-**Push / Pages may be incomplete.** Earlier agent environment could not authenticate to GitHub (`could not read Username for 'https://github.com'`). Dan was installing Homebrew + GitHub CLI when tools required a restart.
-
-### After reboot — agent or Dan should run
+Verify Pages if needed:
 
 ```bash
-# 1. Confirm Homebrew and gh are on PATH (new terminal after reboot)
-which brew
-which gh
-brew --version
-gh --version
-
-# 2. Auth if needed
-gh auth login
-gh auth status
-
-# 3. Project
-cd /Users/danhagey/Builds/WorkoutLog
-git status
-git remote -v
-
-# 4. Commit this handoff (and any pending files), then push
-git add SESSION-HANDOFF.md
-# optional: improve README later
-git status
-git commit -m "Add session handoff for GitHub Pages setup and Stage 4 retest."
-git push -u origin main
-
-# 5. Enable GitHub Pages (CLI)
-gh api repos/DanHagey/Workoutlogger/pages \
-  -X POST \
-  -f build_type=legacy \
-  -f "source[branch]=main" \
-  -f "source[path]=/"
-
-# If pages already exists, set source instead:
-# gh api repos/DanHagey/Workoutlogger/pages -X PUT -f build_type=legacy -f "source[branch]=main" -f "source[path]=/"
+gh api repos/DanHagey/Workoutlogger/pages --jq .status
+curl -sI https://danhagey.github.io/Workoutlogger/ | head -5
 ```
 
-**Or enable Pages in the UI:**  
-https://github.com/DanHagey/Workoutlogger/settings/pages  
-→ Deploy from branch → `main` → `/ (root)` → Save
+---
 
-**Expected live URL:**  
-https://danhagey.github.io/Workoutlogger/
+## How the agent should work
 
-(Confirm exact URL on the Pages settings page after deploy.)
+1. Read this handoff + skim `workout-logger-build-plan.md` for template exactness.  
+2. One work item (or tightly coupled 1+2) → push → stop with verification steps.  
+3. Never expand scope (no backend, no vault read, no optional-field redesign unless asked).  
+4. Diagnose before patching.  
+5. Tutoring light: name the concept, 2–4 sentences.
 
 ---
 
-## Immediate next steps (ordered)
-
-1. **Reboot / new terminal** — confirm `brew` and `gh` work.
-2. **Push `main`** so GitHub has current `index.html` (Stage 1–4).
-3. **Turn on GitHub Pages** (CLI or Settings UI above).
-4. **Stage 4 retest on iPhone (required before Stage 5):**
-   - Open the **Pages https URL** in Safari (not Files / Downloads).
-   - Fill form; exercise block should include `&`, `#`, `%`, quotes, blank lines.
-   - Submit.
-   - Obsidian must open note `Inbox/YYYY-MM-DD Workout Log` in vault `second-brain` with every character intact.
-5. Only after Dan confirms Stage 4: implement **Stage 5 only** (validation + always-on copy fallback). Then stop for verification.
-6. Then **Stage 6** (polish + acceptance checklist), then Home Screen web clip final pass.
-
----
-
-## Stage 5 preview (do not build until Stage 4 verified)
-
-From the plan:
-
-- Required on submit: Focus, Location (non-empty if Other), both Energy values, exercise block.
-- On failure: scroll to + highlight first bad field; **no `alert()`**.
-- After successful submit: persistent strip with **Copy note** (`navigator.clipboard.writeText`) + “Copied” state, and hint: *If Obsidian didn't open, copy the note and paste it manually.* Always show this strip (custom schemes fail silently on iOS).
-- **Do not clear the form** after submit.
-
-## Stage 6 preview
-
-Spacing, selected-state contrast, full-width ≥52px submit, acceptance checklist on iPhone **from Home Screen web clip**.
-
----
-
-## How the agent should work this project
-
-1. Read `workout-logger-build-plan.md` and this handoff.
-2. Build **one stage per turn**, then stop with verification steps for Dan.
-3. Never change locked decisions.
-4. When something breaks: diagnose root cause in plain language before changing code.
-5. Keep tutoring light — name the CS50P-adjacent concept, 2–4 sentences.
-
----
-
-## Quick console checks (still valid)
+## Console checks
 
 ```js
 document.getElementById("date").value   // ISO YYYY-MM-DD
-buildNote(collectForm())                // full note string
+buildNote(collectForm())                // fuel lines should show "none" when empty
+// After collision work, inspect URI path or localStorage keys for the date
 ```
 
 ---
 
-## Out of scope (v1)
+## Explicitly out of scope (still)
 
-Same-day collision handling, multi-vault, offline/SW, read-back, any backend. Logging twice same day opens existing note (Obsidian quirk, not a bug).
+- Merging two same-day sessions into one note  
+- Reading the vault to discover existing files  
+- Multi-vault, offline/SW, AI, multi-step flow  
+- Changing chip sets / field list without Dan asking  
+- “Remember last location” and other brainstorm items — **not** agreed; leave until pain appears  
 
 ---
 
 ## One-liner for the next agent
 
-> Workout Logger is Stage 1–4 code-complete in `index.html`; Stage 4 iPhone verify blocked by `file://`. After reboot: get `brew`/`gh` on PATH, push to `DanHagey/Workoutlogger`, enable GitHub Pages, retest Obsidian handoff from https, then Stage 5 only per `workout-logger-build-plan.md`.
+> v1 is shipped on GitHub Pages. Next: (1) empty fuel → `"none"` in pure `buildNote`, (2) same-day notes named `YYYY-MM-DD Workout Log` then `… Workout Log 2` via localStorage count (no vault read), (3) then scaffold Python `build_note` + tests matching the JS template. One item at a time; verify on https/web clip after JS changes.
