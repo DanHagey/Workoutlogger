@@ -183,6 +183,62 @@
     button[type="submit"]:active {
       opacity: 0.9;
     }
+
+    /* Stage 5: validation highlight + copy fallback */
+    .field.field-error .chips,
+    .field.field-error input,
+    .field.field-error textarea {
+      outline: 2px solid var(--danger);
+      outline-offset: 1px;
+      border-color: var(--danger);
+    }
+
+    .field.field-error .field-label,
+    .field.field-error > label {
+      color: var(--danger);
+    }
+
+    .copy-fallback {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .copy-fallback.visible {
+      display: flex;
+    }
+
+    .copy-fallback p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .copy-fallback button {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--chip-bg);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .copy-fallback button.copied {
+      background: var(--chip-selected);
+      border-color: var(--chip-selected);
+      color: var(--accent-text);
+    }
   </style>
 </head>
 <body>
@@ -317,6 +373,12 @@
 
       <button type="submit">Log workout</button>
     </form>
+
+    <!-- Stage 5: always shown after a valid submit (custom schemes fail silently) -->
+    <div id="copy-fallback" class="copy-fallback" aria-live="polite">
+      <p>If Obsidian didn't open, copy the note and paste it manually.</p>
+      <button type="button" id="copy-note">Copy note</button>
+    </div>
   </div>
 
   <script>
@@ -468,13 +530,165 @@
       );
     }
 
+    // --- Stage 5: validation (guard clauses) + always-on copy fallback ---
+    // Required: Focus, Location (non-empty if Other), both Energy chips, exercise block.
+    // On fail: scroll + highlight first bad field — no alert(). Form never cleared.
+
+    var lastNote = ""; // plain text held for Copy note after a successful submit
+
+    function clearFieldErrors() {
+      var errored = document.querySelectorAll(".field.field-error");
+      for (var i = 0; i < errored.length; i++) {
+        errored[i].classList.remove("field-error");
+      }
+    }
+
+    function markFieldError(fieldEl) {
+      if (fieldEl) {
+        fieldEl.classList.add("field-error");
+      }
+    }
+
+    function focusAndScroll(el) {
+      if (!el) {
+        return;
+      }
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (typeof el.focus === "function") {
+        try {
+          el.focus({ preventScroll: true });
+        } catch (e) {
+          el.focus();
+        }
+      }
+    }
+
+    /**
+     * Returns the first invalid control (or its .field), or null if all required pass.
+     * Order matches the form top-to-bottom so "first bad field" is predictable.
+     */
+    function findFirstInvalid() {
+      var focusChip = selectedChipValue("focus");
+      var focusField = document.querySelector('[data-group="focus"]').closest(".field");
+      var focusOther = document.getElementById("focus-other");
+      if (!focusChip) {
+        return { field: focusField, control: focusField };
+      }
+      if (focusChip === "Other" && focusOther.value.trim() === "") {
+        return { field: focusField, control: focusOther };
+      }
+
+      var locationChip = selectedChipValue("location");
+      var locationField = document.querySelector('[data-group="location"]').closest(".field");
+      var locationOther = document.getElementById("location-other");
+      if (!locationChip) {
+        return { field: locationField, control: locationField };
+      }
+      if (locationChip === "Other" && locationOther.value.trim() === "") {
+        return { field: locationField, control: locationOther };
+      }
+
+      var energy1 = selectedChipValue("energy1");
+      var energy1Field = document.querySelector('[data-group="energy1"]').closest(".field");
+      if (!energy1) {
+        return { field: energy1Field, control: energy1Field };
+      }
+
+      var energy2 = selectedChipValue("energy2");
+      var energy2Field = document.querySelector('[data-group="energy2"]').closest(".field");
+      if (!energy2) {
+        return { field: energy2Field, control: energy2Field };
+      }
+
+      var exercises = document.getElementById("exercises");
+      if (exercises.value.trim() === "") {
+        return { field: exercises.closest(".field"), control: exercises };
+      }
+
+      return null;
+    }
+
+    function showCopyFallback(note) {
+      lastNote = note;
+      var strip = document.getElementById("copy-fallback");
+      var btn = document.getElementById("copy-note");
+      strip.classList.add("visible");
+      btn.textContent = "Copy note";
+      btn.classList.remove("copied");
+    }
+
+    document.getElementById("copy-note").addEventListener("click", function () {
+      var btn = document.getElementById("copy-note");
+      if (!lastNote) {
+        return;
+      }
+      // clipboard API needs a secure context (https) — Pages provides that
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(lastNote).then(function () {
+          btn.textContent = "Copied";
+          btn.classList.add("copied");
+        }).catch(function () {
+          // Fallback for rare clipboard denials: select via temporary textarea
+          fallbackCopy(lastNote, btn);
+        });
+      } else {
+        fallbackCopy(lastNote, btn);
+      }
+    });
+
+    function fallbackCopy(text, btn) {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+      } catch (e) {
+        btn.textContent = "Copy failed";
+      }
+      document.body.removeChild(ta);
+    }
+
+    // Clear error highlight when user fixes a field (chips or typing)
+    document.getElementById("workout-form").addEventListener("click", function (event) {
+      if (event.target.closest(".chip")) {
+        var field = event.target.closest(".field");
+        if (field) {
+          field.classList.remove("field-error");
+        }
+      }
+    });
+    document.getElementById("workout-form").addEventListener("input", function (event) {
+      var field = event.target.closest(".field");
+      if (field) {
+        field.classList.remove("field-error");
+      }
+    });
+
     document.getElementById("workout-form").addEventListener("submit", function (event) {
       event.preventDefault(); // stop normal form navigation
+
+      clearFieldErrors();
+
+      var invalid = findFirstInvalid();
+      if (invalid) {
+        markFieldError(invalid.field);
+        focusAndScroll(invalid.control);
+        return; // guard clause: do not navigate
+      }
 
       var data = collectForm();
       var note = buildNote(data);
       var uri = buildObsidianUri(data, note);
 
+      // Always reveal copy strip — scheme handoff can fail with no error to catch
+      showCopyFallback(note);
+      // Do not clear the form; data must survive if Obsidian never opens
       window.location.href = uri;
     });
   </script>
