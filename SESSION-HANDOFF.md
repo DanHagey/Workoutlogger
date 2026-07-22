@@ -24,11 +24,12 @@ Dan is using this to practice programming fundamentals (CS50P parallels). Keep e
 | 1 | Static skeleton | **Done** — verified |
 | 2 | Chip behavior + Other reveals | **Done** — verified |
 | 3 | Note assembly (`buildNote` / `collectForm`) | **Done** — verified |
-| 4 | Encoding + Obsidian redirect | **Code done; iPhone handoff not yet verified** |
-| 5 | Validation + copy fallback | Not started |
-| 6 | Polish + acceptance pass | Not started |
+| 4 | Encoding + Obsidian redirect | **Done** — verified on https (GitHub Pages) |
+| 5 | Validation + copy fallback | **Done** — verified |
+| 6 | Polish + acceptance pass | **Done** — full checklist passed from Home Screen web clip |
 
-**Blocked on:** hosting the app over **https** so iOS will allow the `obsidian://` redirect. Local `file://` fails (see below). GitHub Pages was being set up when the session paused for a computer restart (Homebrew install requires shell restart; `gh` was being installed via Homebrew).
+**v1 shipped.** Live URL: https://danhagey.github.io/Workoutlogger/  
+Note path: `Inbox/YYYY-MM-DD Workout Log` in vault `second-brain`.
 
 ---
 

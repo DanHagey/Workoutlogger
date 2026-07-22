@@ -183,16 +183,19 @@ does not execute JavaScript, and `file://` URLs can't be web-clipped.
 
 ## Acceptance checklist
 
-- [ ] Loads with today's date pre-filled
-- [ ] All 12 fields on one scrollable screen; no multi-step flow
-- [ ] Chip groups single-select; "Other" reveals show/hide/clear correctly
-- [ ] Special-character paste (`&`, `#`, `%`, quotes, blank lines) arrives intact
-- [ ] Note matches template character-for-character, including `  pre: ` /
+- [x] Loads with today's date pre-filled
+- [x] All 12 fields on one scrollable screen; no multi-step flow
+- [x] Chip groups single-select; "Other" reveals show/hide/clear correctly
+- [x] Special-character paste (`&`, `#`, `%`, quotes, blank lines) arrives intact
+- [x] Note matches template character-for-character, including `  pre: ` /
       `  mid: ` with empty values
-- [ ] Copy-note button appears post-submit and copies plain note text
-- [ ] Form data survives submit
-- [ ] Zero network requests beyond the page itself
-- [ ] Works launched from the Home Screen web clip
+- [x] Copy-note button appears post-submit and copies plain note text
+- [x] Form data survives submit
+- [x] Zero network requests beyond the page itself
+- [x] Works launched from the Home Screen web clip
+
+**Shipped (2026-07-22):** https://danhagey.github.io/Workoutlogger/  
+Note file: `Inbox/YYYY-MM-DD Workout Log`
 
 ## Out of scope (v1)
 
