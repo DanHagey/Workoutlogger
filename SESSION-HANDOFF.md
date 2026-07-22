@@ -11,7 +11,7 @@ Read the build plan first. Follow it **one stage at a time**. Do not skip ahead.
 
 ## Goal
 
-One-screen workout entry form for iOS Safari. Single static file (`index.html`), vanilla HTML/CSS/JS, no backend, no framework. On submit: assemble Markdown client-side → `obsidian://new` into vault `second-brain` as `Inbox/Workout YYYY-MM-DD`.
+One-screen workout entry form for iOS Safari. Single static file (`index.html`), vanilla HTML/CSS/JS, no backend, no framework. On submit: assemble Markdown client-side → `obsidian://new` into vault `second-brain` as `Inbox/YYYY-MM-DD Workout Log`.
 
 Dan is using this to practice programming fundamentals (CS50P parallels). Keep explanations short (2–4 sentences + the concept name). No lectures.
 
@@ -50,7 +50,7 @@ Date field note (already resolved for Dan): `<input type="date">` *displays* loc
 ## Locked decisions (do not change)
 
 - Vault: `second-brain`
-- File path: `Inbox/Workout YYYY-MM-DD` (date only; same-day collisions out of scope)
+- File path: `Inbox/YYYY-MM-DD Workout Log` (date only; same-day collisions out of scope)
 - URI: `obsidian://new?vault=…&file=…&content=…`
 - Encoding: **`encodeURIComponent()`** on file and content values — never `encodeURI()`
 - Note template: exact labels, casing, two-space indent on `pre:` / `mid:`, blank lines per plan
@@ -148,7 +148,7 @@ https://danhagey.github.io/Workoutlogger/
    - Open the **Pages https URL** in Safari (not Files / Downloads).
    - Fill form; exercise block should include `&`, `#`, `%`, quotes, blank lines.
    - Submit.
-   - Obsidian must open note `Inbox/Workout YYYY-MM-DD` in vault `second-brain` with every character intact.
+   - Obsidian must open note `Inbox/YYYY-MM-DD Workout Log` in vault `second-brain` with every character intact.
 5. Only after Dan confirms Stage 4: implement **Stage 5 only** (validation + always-on copy fallback). Then stop for verification.
 6. Then **Stage 6** (polish + acceptance checklist), then Home Screen web clip final pass.
 

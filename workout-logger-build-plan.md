@@ -25,7 +25,7 @@ concept in play, not just the fix.
 ## Locked decisions (do not re-derive or change)
 
 - Vault name: `second-brain`
-- Target file: `Inbox/Workout YYYY-MM-DD` (date-only; same-day collisions out of scope)
+- Target file: `Inbox/YYYY-MM-DD Workout Log` (date-only; same-day collisions out of scope)
 - URI: `obsidian://new?vault=second-brain&file=<path>&content=<content>`
 - Encoding: `encodeURIComponent()` on the `file` and `content` values — never
   `encodeURI()`. A raw `&`, `#`, or newline in typed text corrupts the URL under
@@ -140,7 +140,7 @@ former escapes `&`, `#`, `=` too, which is why the lighter one broke Shortcuts.
 log the URI to console instead of redirecting isn't needed — just check on
 iPhone: fill the form with an exercise block containing `&`, `#`, `%`, quotes,
 and blank lines. Submit. Note must land in Obsidian as
-`Inbox/Workout {date}.md` with every character intact.
+`Inbox/{date} Workout Log.md` with every character intact.
 
 ## Stage 5 — Validation + copy fallback
 

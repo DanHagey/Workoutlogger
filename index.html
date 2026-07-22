@@ -521,7 +521,7 @@
     var VAULT = "second-brain";
 
     function buildObsidianUri(data, note) {
-      var filePath = "Inbox/Workout " + data.date;
+      var filePath = "Inbox/" + data.date + " Workout Log";
       return (
         "obsidian://new" +
         "?vault=" + encodeURIComponent(VAULT) +
